@@ -8,10 +8,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 # drf-spectacular imports
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiRequest
 
 from .models import User
 from .serializers import (
@@ -24,17 +24,25 @@ from .serializers import (
 @extend_schema(
     summary="Register new Student account",
     description="Creates a student account. An OTP is sent to the provided email for verification.",
-    request=StudentRegisterSerializer,
+    request=OpenApiRequest(
+        request=StudentRegisterSerializer,
+        media_type='multipart/form-data'
+    ),
     responses={
         201: OpenApiResponse(
             description="Account created – check email for OTP",
-            response=StudentRegisterSerializer  # or custom dict serializer if you prefer
+            response={
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'user_id': {'type': 'integer'},
+                    'email': {'type': 'string', 'format': 'email'}
+                }
+            }
         ),
         400: "Validation error"
     },
     tags=['Authentication - Registration'],
-    methods=['POST'],
-    request_media_type='multipart/form-data',
 )
 class StudentRegisterView(APIView):
     def post(self, request):
@@ -52,17 +60,25 @@ class StudentRegisterView(APIView):
 @extend_schema(
     summary="Register new Instructor account",
     description="Creates an instructor account. An OTP is sent to the provided email for verification.",
-    request=InstructorRegisterSerializer,
+    request=OpenApiRequest(
+        request=InstructorRegisterSerializer,
+        media_type='multipart/form-data'
+    ),
     responses={
         201: OpenApiResponse(
             description="Account created – check email for OTP",
-            response=InstructorRegisterSerializer
+            response={
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'user_id': {'type': 'integer'},
+                    'email': {'type': 'string', 'format': 'email'}
+                }
+            }
         ),
         400: "Validation error"
     },
     tags=['Authentication - Registration'],
-    methods=['POST'],
-    request_media_type='multipart/form-data',
 )
 class InstructorRegisterView(APIView):
     def post(self, request):
@@ -86,7 +102,6 @@ class InstructorRegisterView(APIView):
         400: "Invalid/expired OTP or user not found"
     },
     tags=['Authentication'],
-    methods=['POST'],
 )
 class OTPVerifyView(APIView):
     def post(self, request):
@@ -113,7 +128,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     description="Returns the authenticated user's profile information.",
     responses=ProfileSerializer,
     tags=['Profile'],
-    methods=['GET'],
 )
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -126,11 +140,12 @@ class ProfileView(APIView):
 @extend_schema(
     summary="Update profile (including photo & documents)",
     description="Partially update the authenticated user's profile. Supports file uploads.",
-    request=ProfileSerializer,
+    request=OpenApiRequest(
+        request=ProfileSerializer,
+        media_type='multipart/form-data'
+    ),
     responses=ProfileSerializer,
     tags=['Profile'],
-    methods=['PATCH'],
-    request_media_type='multipart/form-data',
 )
 class UpdateProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -152,7 +167,6 @@ class UpdateProfileView(APIView):
         400: "Email not found or invalid"
     },
     tags=['Authentication'],
-    methods=['POST'],
 )
 class ForgotPasswordView(APIView):
     def post(self, request):
@@ -184,7 +198,6 @@ class ForgotPasswordView(APIView):
         400: "Invalid OTP or user not found"
     },
     tags=['Authentication'],
-    methods=['POST'],
 )
 class ResetPasswordView(APIView):
     def post(self, request):
@@ -214,7 +227,6 @@ class ResetPasswordView(APIView):
         400: "Invalid old password or mismatch"
     },
     tags=['Authentication'],
-    methods=['POST'],
 )
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
@@ -248,7 +260,6 @@ class ChangePasswordView(APIView):
         400: "Invalid or missing refresh token"
     },
     tags=['Authentication'],
-    methods=['POST'],
 )
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
