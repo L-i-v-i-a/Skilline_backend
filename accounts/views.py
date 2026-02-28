@@ -1,15 +1,18 @@
-from django.shortcuts import render
-from django.core.mail import send_mail
+# accounts/views.py
 
-# Create your views here.
+from django.core.mail import send_mail
+from django.conf import settings
+
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView, settings
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+
+# drf-spectacular imports
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+
 from .models import User
 from .serializers import (
     StudentRegisterSerializer, InstructorRegisterSerializer, OTPVerifySerializer,
@@ -18,14 +21,22 @@ from .serializers import (
 )
 
 
+@extend_schema(
+    summary="Register new Student account",
+    description="Creates a student account. An OTP is sent to the provided email for verification.",
+    request=StudentRegisterSerializer,
+    responses={
+        201: OpenApiResponse(
+            description="Account created – check email for OTP",
+            response=StudentRegisterSerializer  # or custom dict serializer if you prefer
+        ),
+        400: "Validation error"
+    },
+    tags=['Authentication - Registration'],
+    methods=['POST'],
+    request_media_type='multipart/form-data',
+)
 class StudentRegisterView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Register new Student account",
-        operation_description="Creates a student account. OTP is sent to email for verification.",
-        request_body=StudentRegisterSerializer,
-        tags=['Authentication - Registration'],
-        consumes=['multipart/form-data'],
-    )
     def post(self, request):
         serializer = StudentRegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -38,14 +49,22 @@ class StudentRegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    summary="Register new Instructor account",
+    description="Creates an instructor account. An OTP is sent to the provided email for verification.",
+    request=InstructorRegisterSerializer,
+    responses={
+        201: OpenApiResponse(
+            description="Account created – check email for OTP",
+            response=InstructorRegisterSerializer
+        ),
+        400: "Validation error"
+    },
+    tags=['Authentication - Registration'],
+    methods=['POST'],
+    request_media_type='multipart/form-data',
+)
 class InstructorRegisterView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Register new Instructor account",
-        operation_description="Creates an instructor account. OTP is sent to email for verification.",
-        request_body=InstructorRegisterSerializer,
-        tags=['Authentication - Registration'],
-        consumes=['multipart/form-data'],
-    )
     def post(self, request):
         serializer = InstructorRegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -58,12 +77,18 @@ class InstructorRegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    summary="Verify email with OTP",
+    description="Verifies the 6-digit OTP sent during registration.",
+    request=OTPVerifySerializer,
+    responses={
+        200: OpenApiResponse(description="OTP verified successfully"),
+        400: "Invalid/expired OTP or user not found"
+    },
+    tags=['Authentication'],
+    methods=['POST'],
+)
 class OTPVerifyView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Verify email with OTP",
-        request_body=OTPVerifySerializer,
-        tags=['Authentication'],
-    )
     def post(self, request):
         serializer = OTPVerifySerializer(data=request.data)
         if serializer.is_valid():
@@ -83,24 +108,33 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
+@extend_schema(
+    summary="Get current user profile",
+    description="Returns the authenticated user's profile information.",
+    responses=ProfileSerializer,
+    tags=['Profile'],
+    methods=['GET'],
+)
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(operation_summary="Get current user profile", tags=['Profile'])
     def get(self, request):
         serializer = ProfileSerializer(request.user)
         return Response(serializer.data)
 
 
+@extend_schema(
+    summary="Update profile (including photo & documents)",
+    description="Partially update the authenticated user's profile. Supports file uploads.",
+    request=ProfileSerializer,
+    responses=ProfileSerializer,
+    tags=['Profile'],
+    methods=['PATCH'],
+    request_media_type='multipart/form-data',
+)
 class UpdateProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(
-        operation_summary="Update profile (including photo & documents)",
-        request_body=ProfileSerializer,
-        tags=['Profile'],
-        consumes=['multipart/form-data'],
-    )
     def patch(self, request):
         serializer = ProfileSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
@@ -109,12 +143,18 @@ class UpdateProfileView(APIView):
         return Response(serializer.errors, status=400)
 
 
+@extend_schema(
+    summary="Request password reset OTP",
+    description="Sends a password reset OTP to the provided email.",
+    request=ForgotPasswordSerializer,
+    responses={
+        200: OpenApiResponse(description="OTP sent to email"),
+        400: "Email not found or invalid"
+    },
+    tags=['Authentication'],
+    methods=['POST'],
+)
 class ForgotPasswordView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Request password reset OTP",
-        request_body=ForgotPasswordSerializer,
-        tags=['Authentication'],
-    )
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -135,12 +175,18 @@ class ForgotPasswordView(APIView):
         return Response(serializer.errors, status=400)
 
 
+@extend_schema(
+    summary="Reset password using OTP",
+    description="Resets the password using a valid OTP.",
+    request=ResetPasswordSerializer,
+    responses={
+        200: OpenApiResponse(description="Password reset successful"),
+        400: "Invalid OTP or user not found"
+    },
+    tags=['Authentication'],
+    methods=['POST'],
+)
 class ResetPasswordView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Reset password using OTP",
-        request_body=ResetPasswordSerializer,
-        tags=['Authentication'],
-    )
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -159,14 +205,20 @@ class ResetPasswordView(APIView):
         return Response(serializer.errors, status=400)
 
 
+@extend_schema(
+    summary="Change password while logged in",
+    description="Allows the authenticated user to change their password.",
+    request=ChangePasswordSerializer,
+    responses={
+        200: OpenApiResponse(description="Password changed successfully"),
+        400: "Invalid old password or mismatch"
+    },
+    tags=['Authentication'],
+    methods=['POST'],
+)
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(
-        operation_summary="Change password while logged in",
-        request_body=ChangePasswordSerializer,
-        tags=['Authentication'],
-    )
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -179,10 +231,28 @@ class ChangePasswordView(APIView):
         return Response(serializer.errors, status=400)
 
 
+@extend_schema(
+    summary="Logout and blacklist refresh token",
+    description="Blacklists the provided refresh token to log the user out.",
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'refresh': {'type': 'string', 'description': 'Refresh token to blacklist'}
+            },
+            'required': ['refresh']
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="Logged out successfully"),
+        400: "Invalid or missing refresh token"
+    },
+    tags=['Authentication'],
+    methods=['POST'],
+)
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(operation_summary="Logout and blacklist refresh token", tags=['Authentication'])
     def post(self, request):
         try:
             refresh_token = request.data.get("refresh")
