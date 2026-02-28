@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
     'accounts',
-    'corsheader'
+    'corsheaders',
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
