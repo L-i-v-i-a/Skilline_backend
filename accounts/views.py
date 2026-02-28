@@ -6,7 +6,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -42,6 +42,7 @@ from .serializers import (
     tags=['Authentication - Registration'],
 )
 class StudentRegisterView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = StudentRegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -75,6 +76,7 @@ class StudentRegisterView(APIView):
     tags=['Authentication - Registration'],
 )
 class InstructorRegisterView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = InstructorRegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -98,6 +100,7 @@ class InstructorRegisterView(APIView):
     tags=['Authentication'],
 )
 class OTPVerifyView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = OTPVerifySerializer(data=request.data)
         if serializer.is_valid():
