@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 # drf-spectacular imports
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiRequest
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .models import User
 from .serializers import (
@@ -23,11 +23,8 @@ from .serializers import (
 
 @extend_schema(
     summary="Register new Student account",
-    description="Creates a student account. An OTP is sent to the provided email for verification.",
-    request=OpenApiRequest(
-        request=StudentRegisterSerializer,
-        media_type='multipart/form-data'
-    ),
+    description="Creates a student account. An OTP is sent to the provided email for verification. Supports multipart/form-data for profile image upload.",
+    request=StudentRegisterSerializer,
     responses={
         201: OpenApiResponse(
             description="Account created – check email for OTP",
@@ -59,11 +56,8 @@ class StudentRegisterView(APIView):
 
 @extend_schema(
     summary="Register new Instructor account",
-    description="Creates an instructor account. An OTP is sent to the provided email for verification.",
-    request=OpenApiRequest(
-        request=InstructorRegisterSerializer,
-        media_type='multipart/form-data'
-    ),
+    description="Creates an instructor account. An OTP is sent to the provided email for verification. Supports multipart/form-data for profile image upload.",
+    request=InstructorRegisterSerializer,
     responses={
         201: OpenApiResponse(
             description="Account created – check email for OTP",
@@ -139,11 +133,8 @@ class ProfileView(APIView):
 
 @extend_schema(
     summary="Update profile (including photo & documents)",
-    description="Partially update the authenticated user's profile. Supports file uploads.",
-    request=OpenApiRequest(
-        request=ProfileSerializer,
-        media_type='multipart/form-data'
-    ),
+    description="Partially update the authenticated user's profile. Supports file uploads (multipart/form-data).",
+    request=ProfileSerializer,
     responses=ProfileSerializer,
     tags=['Profile'],
 )
