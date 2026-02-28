@@ -44,7 +44,7 @@ from .serializers import (
 class StudentRegisterView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
-        serializer = StudentRegisterSerializer(data=request.data)
+        serializer = StudentRegisterSerializer(data=request.data, context={'role': 'student'})
         if serializer.is_valid():
             user = serializer.save()
             return Response({
@@ -78,7 +78,7 @@ class StudentRegisterView(APIView):
 class InstructorRegisterView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
-        serializer = InstructorRegisterSerializer(data=request.data)
+        serializer = InstructorRegisterSerializer(data=request.data, context={'role': 'instructor'})
         if serializer.is_valid():
             user = serializer.save()
             return Response({

@@ -86,6 +86,7 @@ class BaseRegisterSerializer(serializers.ModelSerializer):
 
 
 class StudentRegisterSerializer(BaseRegisterSerializer):
+    
     matric_number = serializers.CharField(max_length=20, required=True)
     major = serializers.CharField(max_length=100, required=False)
     student_id_document = serializers.FileField(required=False, allow_null=True)
