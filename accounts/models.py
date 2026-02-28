@@ -1,12 +1,13 @@
+# accounts/models.py
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.core.cache import cache
 import random
 import string
 from django.utils import timezone
 
 
-class User(AbstractUser):
+class User(AbstractUser, PermissionsMixin):
     ROLE_CHOICES = (
         ('student', 'Student'),
         ('instructor', 'Instructor'),
@@ -21,7 +22,7 @@ class User(AbstractUser):
     bio = models.TextField(blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
-    # Student-specific
+    # Student-specific fields
     matric_number = models.CharField(
         max_length=20, blank=True, null=True, unique=True,
         help_text="Matriculation / Registration number (required for students)"
@@ -35,7 +36,7 @@ class User(AbstractUser):
         help_text="Student ID card, admission letter or proof of enrollment"
     )
 
-    # Instructor-specific
+    # Instructor-specific fields
     department = models.CharField(
         max_length=100, blank=True, null=True,
         help_text="Department / Faculty"
@@ -50,6 +51,30 @@ class User(AbstractUser):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # ────────────────────────────────────────────────
+    # Fix for reverse accessor clashes (E304)
+    # We must override groups and user_permissions with unique related_name
+    # ────────────────────────────────────────────────
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='accounts_user_groups',          # ← unique name
+        blank=True,
+        help_text='The groups this user belongs to.',
+        related_query_name='accounts_user',
+        verbose_name='groups',
+    )
+
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='accounts_user_permissions',     # ← unique name
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_query_name='accounts_user',
+        verbose_name='user permissions',
+    )
+
+    # ────────────────────────────────────────────────
 
     def __str__(self):
         name = self.get_full_name() or self.username
