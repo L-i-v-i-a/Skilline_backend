@@ -110,17 +110,26 @@ SPECTACULAR_SETTINGS = {
         'hideHostname': False,
     },
 
-    # ADD THIS BLOCK
+    # These help suppress warnings
+    'WARN_UNRESOLVED_SERIALIZER': False,
+    'WARN_SCHEMA_UNRESOLVABLE': False,
+
+    # Most important: completely ignore groups & user_permissions in schema
     'SERVE_PUBLIC': True,
     'COMPONENT_SEPARATOR': '@',
     'EXCLUDE_ANNOTATIONS': True,
-
-    # Exclude problematic fields from User model schema
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
     'COMPONENT_NO_NAME': True,
+
+    # Exclude the problematic M2M fields
     'EXCLUDE_FIELDS_FROM_SCHEMA': {
-        'accounts.User': ['groups', 'user_permissions'],  
+        'accounts.User': ['groups', 'user_permissions'],
     },
+
+    # NEW: Tell spectacular not to introspect these fields at all
+    'FIELD_SCHEMA_PROCESSORS': [
+        lambda field, direction: None if field.field_name in ['groups', 'user_permissions'] else field,
+    ],
 }
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
