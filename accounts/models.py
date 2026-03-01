@@ -94,12 +94,12 @@ class User(AbstractUser, PermissionsMixin):
 
     def generate_otp(self):
         otp = ''.join(random.choices(string.digits, k=6))
-        cache_key = f"otp_{self.email}_{timezone.now().strftime('%Y%m%d%H')}"
+        cache_key = f"otp_{self.pk}"
         cache.set(cache_key, otp, timeout=300)  # 5 minutes
         return otp
 
     def verify_otp(self, otp):
-        cache_key = f"otp_{self.email}_{timezone.now().strftime('%Y%m%d%H')}"
+        cache_key = f"otp_{self.pk}"
         cached_otp = cache.get(cache_key)
         if cached_otp and cached_otp == otp:
             self.is_verified = True

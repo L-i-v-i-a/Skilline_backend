@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.core.mail import send_mail
 from django.conf import settings
+from django.contrib.auth import update_last_login
 from .models import User
 
 
@@ -21,12 +22,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 {"detail": "Account email not verified. Please complete OTP verification."}
             )
 
+        # Update last_login
+        update_last_login(None, self.user)
+
         # Login notification
         send_mail(
             subject="New Login Detected - Educator Platform",
             message=(
                 f"Dear {user.get_full_name() or user.username},\n\n"
-                f"We detected a new login to your account on {user.updated_at.strftime('%Y-%m-%d %H:%M:%S')}.\n"
+                f"We detected a new login to your account on {user.last_login.strftime('%Y-%m-%d %H:%M:%S')}.\n"
                 "If this was not you, please change your password immediately.\n\n"
                 "Best regards,\nEducator Team"
             ),
@@ -136,7 +140,7 @@ class ForgotPasswordSerializer(serializers.Serializer):
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     otp = serializers.CharField(max_length=6, required=True)
-    password = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=True, min_length=8)
     password2 = serializers.CharField(write_only=True, required=True)
 
     def validate(self, data):
@@ -147,7 +151,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True, write_only=True)
-    new_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True, min_length=8)
     new_password2 = serializers.CharField(required=True, write_only=True)
 
     def validate(self, data):

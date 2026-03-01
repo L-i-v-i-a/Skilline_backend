@@ -24,15 +24,18 @@ SECRET_KEY = 'django-insecure-vrt92(al=o#4@d72lzk0v5x@#+t-ql8#gdcf_x2&mkm3n4qvrl
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '*',
     'localhost',
-    'skilline-backend.onrender.com',
     '127.0.0.1',
-    'localhost:5173',
-    'skilline-gamma.vercel.app'
-      
-    ]
+    'skilline-backend.onrender.com',
+    'skilline-gamma.vercel.app',
+    '.onrender.com',                   # ← wildcard for render subdomains (helps)
+    '.vercel.app',                     # ← optional but useful
+]
 
+
+# Optional – during heavy debugging you can temporarily allow everything
+# (remove this in production!)
+# CORS_ALLOW_ALL_ORIGINS = True
 
 # Application definition
 
@@ -120,7 +123,8 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://skilline-gamma.vercel.app"
+    "https://localhost:5173",         
+    "https://skilline-gamma.vercel.app",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False  # ← turn off wildcard
