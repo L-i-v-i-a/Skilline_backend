@@ -12,6 +12,8 @@ class Course(models.Model):
     description = models.TextField()
     instructor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='taught_courses')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    cover_image = CloudinaryField('course_images', blank=True, null=True)
+    intro_video = CloudinaryField('course_videos', blank=True, null=True, resource_type='video')  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -41,6 +43,7 @@ class Assignment(models.Model):
     max_score = models.PositiveIntegerField(default=100)
     file = CloudinaryField('assignment_files', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    video = CloudinaryField('assignment_videos', blank=True, null=True, resource_type='video')
 
     def __str__(self):
         return f"{self.title} for {self.course}"

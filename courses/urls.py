@@ -4,6 +4,9 @@ from .views import (
     CourseListView, CourseDetailView, EnrollCourseView, PaymentInitiateView,
     PaymentCallbackView, AssignmentListView, SubmitAssignmentView,
     StudentResultsView, NotificationListView, MarkNotificationReadView,
+    InstructorCourseListView, InstructorCourseCreateView, InstructorCourseUpdateView,
+    AssignmentCreateView, CourseStudentsView, AssignmentSubmissionsView,
+    GradeSubmissionView
 )
 
 urlpatterns = [
@@ -28,4 +31,18 @@ urlpatterns = [
     # Notifications (extra)
     path('notifications/', NotificationListView.as_view(), name='notification-list'),
     path('notifications/<int:pk>/read/', MarkNotificationReadView.as_view(), name='notification-read'),
+    # Instructor Courses
+    path('instructor/courses/', InstructorCourseListView.as_view(), name='instructor-course-list'),
+    path('instructor/courses/create/', InstructorCourseCreateView.as_view(), name='instructor-course-create'),
+    path('instructor/courses/<int:pk>/update/', InstructorCourseUpdateView.as_view(), name='instructor-course-update'),
+
+    # Assignments
+    path('instructor/courses/<int:course_id>/assignments/create/', AssignmentCreateView.as_view(), name='assignment-create'),
+
+    # Students
+    path('instructor/courses/<int:course_id>/students/', CourseStudentsView.as_view(), name='course-students'),
+
+    # Submissions
+    path('instructor/assignments/<int:assignment_id>/submissions/', AssignmentSubmissionsView.as_view(), name='assignment-submissions'),
+    path('instructor/submissions/<int:pk>/grade/', GradeSubmissionView.as_view(), name='grade-submission'),
 ]

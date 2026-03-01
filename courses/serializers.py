@@ -1,5 +1,7 @@
 # courses/serializers.py
 from rest_framework import serializers
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
 from .models import Course, Enrollment, Assignment, Submission, Payment, Notification
 
 
@@ -64,3 +66,50 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'message', 'is_read', 'created_at']
+        
+# courses/serializers.py (add to existing)
+
+class InstructorCourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ['id', 'title', 'description', 'price', 'cover_image', 'intro_video', 'created_at', 'is_active']
+
+class AssignmentCreateSerializer(serializers.ModelSerializer):
+    course_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = Assignment
+        fields = ['id', 'title', 'description', 'due_date', 'max_score', 'file', 'video', 'course_id']
+
+    def create(self, validated_data):
+        course_id = validated_data.pop('course_id')
+        course = get_object_or_404(Course, id=course_id, instructor=self.context['request'].user)
+        assignment = Assignment.objects.create(course=course, **validated_data)
+        # Notify enrolled students
+        for enrollment in course.enrollments.filter(is_paid=True):
+            Notification.objects.create(
+                user=enrollment.student,
+                message=f"New assignment '{assignment.title}' in {course.title}. Due: {assignment.due_date}"
+            )
+        return assignment
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'matric_number', 'major']
+
+class SubmissionGradeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Submission
+        fields = ['grade', 'feedback']
+
+    def update(self, instance, validated_data):
+        instance.grade = validated_data.get('grade', instance.grade)
+        instance.feedback = validated_data.get('feedback', instance.feedback)
+        instance.save()
+        # Notify student
+        Notification.objects.create(
+            user=instance.student,
+            message=f"Your submission for '{instance.assignment.title}' has been graded: {instance.grade}/{instance.assignment.max_score}. Feedback: {instance.feedback or 'None'}"
+        )
+        return instance
