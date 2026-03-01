@@ -163,6 +163,7 @@ class UpdateProfileView(APIView):
     tags=['Authentication'],
 )
 class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -194,6 +195,7 @@ class ForgotPasswordView(APIView):
     tags=['Authentication'],
 )
 class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         if serializer.is_valid():
