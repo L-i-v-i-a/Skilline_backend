@@ -58,25 +58,111 @@ class IsInstructorPermission(IsAuthenticated):
 # ────────────────────────────────────────────────
 # Student Views
 # ────────────────────────────────────────────────
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from .models import Course
+from .serializers import CourseSerializer
+from django.db.models import Q
+
+
 class CourseListView(generics.ListAPIView):
+    """
+    Public endpoint: List all active courses.
+    Anyone (logged in or not) can view this.
+    """
     queryset = Course.objects.filter(is_active=True)
     serializer_class = CourseSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny]  # ← Public access
 
-    @extend_schema(summary="List available courses", tags=['Student - Courses'])
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    filterset_fields = ['price', 'instructor']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'price', 'title']
+    ordering = ['-created_at']  # Newest first by default
+
+    @extend_schema(
+        summary="List all available courses (public)",
+        description=(
+            "Returns a paginated list of all active courses. "
+            "No authentication required. "
+            "Supports filtering by price/instructor, search by title/description, "
+            "and ordering by created_at, price, or title."
+        ),
+        parameters=[
+            OpenApiParameter(name='price', type=float, location=OpenApiParameter.QUERY,
+                             description="Filter by exact price (e.g. 0 for free courses)"),
+            OpenApiParameter(name='instructor', type=int, location=OpenApiParameter.QUERY,
+                             description="Filter by instructor ID"),
+            OpenApiParameter(name='search', type=str, location=OpenApiParameter.QUERY,
+                             description="Search in title or description"),
+            OpenApiParameter(name='ordering', type=str, location=OpenApiParameter.QUERY,
+                             description="Order by: created_at, -created_at, price, -price, title, -title"),
+        ],
+        responses={
+            200: OpenApiResponse(
+                description="List of courses",
+                response=CourseSerializer(many=True)
+            )
+        },
+        tags=['Public - Courses']
+    )
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Optional: if user is logged in and student, annotate enrollment status
+        if self.request.user.is_authenticated and self.request.user.is_student:
+            queryset = queryset.annotate(
+                is_enrolled=Q(enrollments__student=self.request.user, enrollments__is_paid=True)
+            )
+
+        return queryset
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        # Pass request to serializer if needed (e.g. for dynamic fields)
+        context.update({"request": self.request})
+        return context
 
 
 class CourseDetailView(generics.RetrieveAPIView):
+    """
+    Public endpoint: Retrieve details of a single course.
+    Anyone can view course details.
+    """
     queryset = Course.objects.filter(is_active=True)
     serializer_class = CourseSerializer
-    permission_classes = [AllowAny]  # Allow anyone to view course details, but materials will check enrollment
+    permission_classes = [AllowAny]  # ← Public access
+    lookup_field = 'id'  # or 'pk' if preferred
 
-    @extend_schema(summary="View course details", tags=['Student - Courses'])
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+    @extend_schema(
+        summary="View details of a specific course (public)",
+        description=(
+            "Returns full details of one active course, including materials if any. "
+            "No authentication required."
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Course details",
+                response=CourseSerializer
+            ),
+            404: OpenApiResponse(description="Course not found or not active")
+        },
+        tags=['Public - Courses']
+    )
+    def get_object(self):
+        obj = super().get_object()
 
+        # Optional: if user is logged in and student, add enrollment info
+        if self.request.user.is_authenticated and self.request.user.is_student:
+            obj.is_enrolled = Enrollment.objects.filter(
+                student=self.request.user,
+                course=obj,
+                is_paid=True
+            ).exists()
+        else:
+            obj.is_enrolled = False
+
+        return obj
 
 class PaymentInitiateView(APIView):
     permission_classes = [IsStudentPermission]
