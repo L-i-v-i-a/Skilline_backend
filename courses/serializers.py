@@ -4,14 +4,17 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from .models import Course, Enrollment, Assignment, Submission, Payment, Notification, CourseMaterial
 from .views import notify_student
-
-class CourseSerializer(serializers.ModelSerializer):
+class CourseMaterialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseMaterial
+        fields = ['id', 'title', 'description', 'file', 'video', 'created_at', 'is_public']
+class CourseSerializer(serializers.ModelSerializer): 
+    materials = CourseMaterialSerializer(many=True, read_only=True)
     instructor = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'instructor', 'price', 'created_at', 'is_active']
-
+        fields = ['id', 'title', 'description', 'instructor', 'price', 'cover_image', 'intro_video', 'created_at', 'is_active', 'materials']
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
@@ -114,14 +117,6 @@ class SubmissionGradeSerializer(serializers.ModelSerializer):
         )
         return instance
     
-# Update serializers.py to include CourseMaterial
-# courses/serializers.py (add to existing)
-
-class CourseMaterialSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CourseMaterial
-        fields = ['id', 'title', 'description', 'file', 'video', 'created_at', 'is_public']
-
 class CourseMaterialCreateSerializer(serializers.ModelSerializer):
     course_id = serializers.IntegerField(write_only=True)
 
@@ -141,11 +136,3 @@ class CourseMaterialCreateSerializer(serializers.ModelSerializer):
             )
         return material
 
-# Update CourseSerializer to include materials (optional for view all courses)
-class CourseSerializer(serializers.ModelSerializer):  # Override existing
-    materials = CourseMaterialSerializer(many=True, read_only=True)
-    instructor = serializers.StringRelatedField(read_only=True)
-
-    class Meta:
-        model = Course
-        fields = ['id', 'title', 'description', 'instructor', 'price', 'cover_image', 'intro_video', 'created_at', 'is_active', 'materials']
