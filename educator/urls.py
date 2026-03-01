@@ -13,6 +13,7 @@ from drf_spectacular.views import (
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/students/', include('courses.urls')),  # main app for courses, enrollments, payments, etc.
 
     # API endpoints
     path('api/', include('accounts.urls')),

@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'accounts',
     'corsheaders',
+    'courses',
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
