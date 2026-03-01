@@ -2,7 +2,6 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.core.mail import send_mail
 from django.conf import settings
-from django.contrib.auth import update_last_login
 from .models import User
 
 
@@ -21,9 +20,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError(
                 {"detail": "Account email not verified. Please complete OTP verification."}
             )
-
-        # Update last_login
-        update_last_login(None, self.user)
 
         # Login notification
         send_mail(
