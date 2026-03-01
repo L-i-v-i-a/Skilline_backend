@@ -147,6 +147,13 @@ CORS_ALLOWED_ORIGINS = [
     "https://localhost:5173",         
     "https://skilline-gamma.vercel.app",
 ]
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://localhost:5173',          # in case Vite uses HTTPS proxy
+    'https://skilline-gamma.vercel.app',
+    'https://skilline-backend.onrender.com',  # optional but good for Swagger/Postman
+]
 
 CORS_ALLOW_ALL_ORIGINS = False  # ← turn off wildcard
 
