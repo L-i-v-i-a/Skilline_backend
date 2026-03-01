@@ -74,6 +74,7 @@ class CourseListView(generics.ListAPIView):
     queryset = Course.objects.filter(is_active=True)
     serializer_class = CourseSerializer
     permission_classes = [AllowAny]  # ← Public access
+    authentication_classes = []  # ← Empty list = no authentication attempted
 
     filterset_fields = ['price', 'instructor']
     search_fields = ['title', 'description']
@@ -132,6 +133,7 @@ class CourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.filter(is_active=True)
     serializer_class = CourseSerializer
     permission_classes = [AllowAny]  # ← Public access
+    authentication_classes = []  # ← Empty list = no authentication attempted
     lookup_field = 'id'  # or 'pk' if preferred
 
     @extend_schema(
