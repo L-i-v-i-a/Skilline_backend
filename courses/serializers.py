@@ -2,8 +2,8 @@
 from rest_framework import serializers
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
-from .models import Course, Enrollment, Assignment, Submission, Payment, Notification
-
+from .models import Course, Enrollment, Assignment, Submission, Payment, Notification, CourseMaterial
+from .views import notify_student
 
 class CourseSerializer(serializers.ModelSerializer):
     instructor = serializers.StringRelatedField(read_only=True)
@@ -113,3 +113,39 @@ class SubmissionGradeSerializer(serializers.ModelSerializer):
             message=f"Your submission for '{instance.assignment.title}' has been graded: {instance.grade}/{instance.assignment.max_score}. Feedback: {instance.feedback or 'None'}"
         )
         return instance
+    
+# Update serializers.py to include CourseMaterial
+# courses/serializers.py (add to existing)
+
+class CourseMaterialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseMaterial
+        fields = ['id', 'title', 'description', 'file', 'video', 'created_at', 'is_public']
+
+class CourseMaterialCreateSerializer(serializers.ModelSerializer):
+    course_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = CourseMaterial
+        fields = ['id', 'title', 'description', 'file', 'video', 'is_public', 'course_id']
+
+    def create(self, validated_data):
+        course_id = validated_data.pop('course_id')
+        course = get_object_or_404(Course, id=course_id, instructor=self.context['request'].user)
+        material = CourseMaterial.objects.create(course=course, **validated_data)
+        # Notify enrolled students
+        for enrollment in course.enrollments.filter(is_paid=True):
+            notify_student(
+                enrollment.student,
+                f"New material '{material.title}' added to {course.title}"
+            )
+        return material
+
+# Update CourseSerializer to include materials (optional for view all courses)
+class CourseSerializer(serializers.ModelSerializer):  # Override existing
+    materials = CourseMaterialSerializer(many=True, read_only=True)
+    instructor = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Course
+        fields = ['id', 'title', 'description', 'instructor', 'price', 'cover_image', 'intro_video', 'created_at', 'is_active', 'materials']

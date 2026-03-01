@@ -12,7 +12,7 @@ from .serializers import (
     AssignmentCreateSerializer, CourseSerializer, EnrollmentSerializer,
     AssignmentSerializer, InstructorCourseSerializer, StudentSerializer,
     SubmissionGradeSerializer, SubmissionSerializer, PaymentSerializer,
-    PaymentInitiateSerializer, NotificationSerializer
+    PaymentInitiateSerializer, NotificationSerializer, CourseMaterialCreateSerializer, CourseMaterialSerializer
 )
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -76,34 +76,6 @@ class CourseDetailView(generics.RetrieveAPIView):
     @extend_schema(summary="View course details", tags=['Student - Courses'])
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class EnrollCourseView(APIView):
-    permission_classes = [IsStudentPermission]
-
-    @extend_schema(
-        summary="Enroll in a course (creates unpaid enrollment)",
-        request=EnrollmentSerializer,
-        responses={201: EnrollmentSerializer},
-        tags=['Student - Enrollment']
-    )
-    def post(self, request, course_id):
-        course = get_object_or_404(Course, id=course_id, is_active=True)
-        if Enrollment.objects.filter(student=request.user, course=course).exists():
-            return Response({"detail": "Already enrolled."}, status=status.HTTP_400_BAD_REQUEST)
-
-        enrollment = Enrollment.objects.create(student=request.user, course=course)
-        serializer = EnrollmentSerializer(enrollment)
-
-        # Notify instructor about new (unpaid) enrollment
-        notify_instructor(
-            course.instructor,
-            f"New enrollment request (unpaid) from {request.user.get_full_name()} "
-            f"for course: {course.title}"
-        )
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class PaymentInitiateView(APIView):
@@ -407,3 +379,76 @@ class GradeSubmissionView(generics.UpdateAPIView):
             f"You graded submission from {submission.student.get_full_name()} "
             f"for '{submission.assignment.title}' → Score: {submission.grade}"
         )
+
+
+# Update views.py to add new views
+# courses/views.py (add to existing)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CourseMaterialCreateView(APIView):
+    permission_classes = [IsInstructorPermission]
+
+    @extend_schema(
+        summary="Add course material (supports file/video upload)",
+        request=CourseMaterialCreateSerializer,
+        responses=CourseMaterialSerializer,
+        tags=['Instructor - Materials']
+    )
+    def post(self, request, course_id):
+        serializer = CourseMaterialCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            material = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CourseMaterialListView(generics.ListAPIView):
+    serializer_class = CourseMaterialSerializer
+    permission_classes = [IsAuthenticated]  # Anyone can view, but check enrollment for private
+
+    @extend_schema(summary="List materials for a course", tags=['Student - Materials'])
+    def get_queryset(self):
+        course_id = self.kwargs['course_id']
+        course = get_object_or_404(Course, id=course_id, is_active=True)
+        # If student, check enrollment
+        if self.request.user.is_student:
+            get_object_or_404(Enrollment, course=course, student=self.request.user, is_paid=True)
+        # If instructor, check ownership
+        elif self.request.user.is_instructor:
+            if course.instructor != self.request.user:
+                raise PermissionDenied("Not your course.")
+        # Admins can always view
+        elif not self.request.user.is_admin:
+            raise PermissionDenied("Access denied.")
+
+        return course.materials.all().order_by('-created_at')
+
+
+# Update existing EnrollCourseView to prevent duplicate enrollments (already does, but emphasize)
+class EnrollCourseView(APIView):
+    permission_classes = [IsStudentPermission]
+
+    def post(self, request, course_id):
+        course = get_object_or_404(Course, id=course_id, is_active=True)
+        if Enrollment.objects.filter(student=request.user, course=course).exists():
+            return Response({"detail": "Already enrolled. Cannot enroll again."}, status=status.HTTP_400_BAD_REQUEST)
+        enrollment = Enrollment.objects.create(student=request.user, course=course)
+        serializer = EnrollmentSerializer(enrollment)
+
+        notify_instructor(
+            course.instructor,
+            f"New enrollment request (unpaid) from {request.user.get_full_name()} for {course.title}"
+        )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+# Update CourseListView to be public (AllowAny) for "everyone to view all courses"
+class CourseListView(generics.ListAPIView):
+    queryset = Course.objects.filter(is_active=True)
+    serializer_class = CourseSerializer
+    permission_classes = [AllowAny]  # ← Change to AllowAny for public access
+
+    @extend_schema(summary="List all available courses (public)", tags=['Public - Courses'])
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

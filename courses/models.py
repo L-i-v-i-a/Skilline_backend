@@ -91,3 +91,14 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user}: {self.message[:50]}"
+class CourseMaterial(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='materials')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    file = CloudinaryField('course_materials', blank=True, null=True)  # For PDFs/docs
+    video = CloudinaryField('course_videos', blank=True, null=True, resource_type='video')  # For videos
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_public = models.BooleanField(default=False)  # Optional: if some materials are private
+
+    def __str__(self):
+        return f"{self.title} for {self.course.title}"

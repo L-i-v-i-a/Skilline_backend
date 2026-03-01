@@ -1,12 +1,12 @@
 # courses/urls.py
 from django.urls import path
 from .views import (
-    CourseListView, CourseDetailView, EnrollCourseView, PaymentInitiateView,
+    CourseListView, CourseDetailView, CourseMaterialListView, EnrollCourseView, PaymentInitiateView,
     PaymentCallbackView, AssignmentListView, SubmitAssignmentView,
     StudentResultsView, NotificationListView, MarkNotificationReadView,
     InstructorCourseListView, InstructorCourseCreateView, InstructorCourseUpdateView,
     AssignmentCreateView, CourseStudentsView, AssignmentSubmissionsView,
-    GradeSubmissionView
+    GradeSubmissionView, CourseMaterialCreateView
 )
 
 urlpatterns = [
@@ -24,6 +24,8 @@ urlpatterns = [
     # Assignments
     path('courses/<int:course_id>/assignments/', AssignmentListView.as_view(), name='assignment-list'),
     path('assignments/<int:assignment_id>/submit/', SubmitAssignmentView.as_view(), name='submit-assignment'),
+    path('instructor/courses/<int:course_id>/materials/create/', CourseMaterialCreateView.as_view(), name='material-create'),
+    path('courses/<int:course_id>/materials/', CourseMaterialListView.as_view(), name='material-list'),  # For students
 
     # Results
     path('results/', StudentResultsView.as_view(), name='student-results'),
