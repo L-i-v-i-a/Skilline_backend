@@ -57,22 +57,18 @@ class User(AbstractUser, PermissionsMixin):
     # We must override groups and user_permissions with unique related_name
     # ────────────────────────────────────────────────
     groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='accounts_user_groups',          # ← unique name
-        blank=True,
-        help_text='The groups this user belongs to.',
-        related_query_name='accounts_user',
-        verbose_name='groups',
-    )
+    'auth.Group',
+    blank=True,
+    help_text='The groups this user belongs to.',
+    verbose_name='groups',
+)
 
     user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='accounts_user_permissions',     # ← unique name
-        blank=True,
-        help_text='Specific permissions for this user.',
-        related_query_name='accounts_user',
-        verbose_name='user permissions',
-    )
+    'auth.Permission',
+    blank=True,
+    help_text='Specific permissions for this user.',
+    verbose_name='user permissions',
+)
 
     # ────────────────────────────────────────────────
 
