@@ -120,20 +120,12 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    # Add your production frontend domain later, e.g.:
-    # "https://your-frontend.vercel.app",
+    "skilline-gamma.vercel.app/"
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False  # ← turn off wildcard
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://skilline-gamma.vercel.app/",
-]
 
-CORS_ALLOW_ALL_ORIGINS = False  # ← turn off wildcard
-CORS_ALLOW_CREDENTIALS = True   # if you use cookies/auth headers later
-
+CORS_ALLOW_CREDENTIALS = True  
 ROOT_URLCONF = 'educator.urls'
 
 TEMPLATES = [
