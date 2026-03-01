@@ -61,7 +61,7 @@ class IsInstructorPermission(IsAuthenticated):
 class CourseListView(generics.ListAPIView):
     queryset = Course.objects.filter(is_active=True)
     serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     @extend_schema(summary="List available courses", tags=['Student - Courses'])
     def get(self, request, *args, **kwargs):
@@ -71,7 +71,7 @@ class CourseListView(generics.ListAPIView):
 class CourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.filter(is_active=True)
     serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Allow anyone to view course details, but materials will check enrollment
 
     @extend_schema(summary="View course details", tags=['Student - Courses'])
     def get(self, request, *args, **kwargs):
