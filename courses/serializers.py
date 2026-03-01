@@ -3,7 +3,11 @@ from rest_framework import serializers
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from .models import Course, Enrollment, Assignment, Submission, Payment, Notification, CourseMaterial
-from .views import notify_student
+
+def notify_student(student, message):
+    """Create a notification for a student"""
+    Notification.objects.create(user=student, message=message)
+
 class CourseMaterialSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseMaterial
