@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import generics
+from rest_framework.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from accounts.models import User
 from .models import Course, Enrollment, Assignment, Submission, Payment, Notification
@@ -75,6 +77,7 @@ class CourseDetailView(generics.RetrieveAPIView):
         return super().get(request, *args, **kwargs)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class EnrollCourseView(APIView):
     permission_classes = [IsStudentPermission]
 
@@ -142,8 +145,9 @@ class PaymentInitiateView(APIView):
         return Response(serializer.errors, status=400)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class PaymentCallbackView(APIView):
-    permission_classes = [AllowAny]  # Paystack callback is public (no auth token)
+    permission_classes = [AllowAny]  # Paystack callback is public
 
     @extend_schema(
         summary="Paystack payment callback",
@@ -210,6 +214,7 @@ class AssignmentListView(generics.ListAPIView):
         return Assignment.objects.filter(course=enrollment.course)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SubmitAssignmentView(APIView):
     permission_classes = [IsStudentPermission]
 
@@ -289,11 +294,12 @@ class InstructorCourseListView(generics.ListAPIView):
         return Course.objects.filter(instructor=self.request.user)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class InstructorCourseCreateView(APIView):
     permission_classes = [IsInstructorPermission]
 
     @extend_schema(
-        summary="Create new course",
+        summary="Create new course (supports image/video upload)",
         request=InstructorCourseSerializer,
         responses=InstructorCourseSerializer,
         tags=['Instructor - Courses']
@@ -316,11 +322,12 @@ class InstructorCourseCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class InstructorCourseUpdateView(generics.UpdateAPIView):
     serializer_class = InstructorCourseSerializer
     permission_classes = [IsInstructorPermission]
 
-    @extend_schema(summary="Update your course", tags=['Instructor - Courses'])
+    @extend_schema(summary="Update your course (supports image/video)", tags=['Instructor - Courses'])
     def get_queryset(self):
         return Course.objects.filter(instructor=self.request.user)
 
@@ -332,11 +339,12 @@ class InstructorCourseUpdateView(generics.UpdateAPIView):
         )
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class AssignmentCreateView(APIView):
     permission_classes = [IsInstructorPermission]
 
     @extend_schema(
-        summary="Create assignment for your course",
+        summary="Create assignment for your course (supports file/video)",
         request=AssignmentCreateSerializer,
         responses=AssignmentCreateSerializer,
         tags=['Instructor - Assignments']
@@ -345,8 +353,6 @@ class AssignmentCreateView(APIView):
         serializer = AssignmentCreateSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             assignment = serializer.save()
-
-            # Already notifies students (from your existing code)
 
             # Notify instructor (confirmation)
             notify_instructor(
@@ -380,6 +386,7 @@ class AssignmentSubmissionsView(generics.ListAPIView):
         return Submission.objects.filter(assignment=assignment)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class GradeSubmissionView(generics.UpdateAPIView):
     serializer_class = SubmissionGradeSerializer
     permission_classes = [IsInstructorPermission]
