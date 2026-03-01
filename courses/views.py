@@ -178,8 +178,7 @@ class PaymentCallbackView(APIView):
 
 class AssignmentListView(generics.ListAPIView):
     serializer_class = AssignmentSerializer
-    permission_classes = [IsStudentPermission]
-
+    permission_classes = [IsAuthenticated]  
     @extend_schema(summary="View assignments for a course", tags=['Student - Assignments'])
     def get_queryset(self):
         course_id = self.kwargs['course_id']
