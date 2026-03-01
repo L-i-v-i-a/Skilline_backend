@@ -28,7 +28,9 @@ ALLOWED_HOSTS = [
     'localhost',
     'skilline-backend.onrender.com',
     '127.0.0.1',
-    'localhost:5173'    
+    'localhost:5173',
+    'skilline-gamma.vercel.app'
+      
     ]
 
 
@@ -115,7 +117,22 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    # Add your production frontend domain later, e.g.:
+    # "https://your-frontend.vercel.app",
+]
+
+CORS_ALLOW_ALL_ORIGINS = False  # ← turn off wildcard
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://skilline-gamma.vercel.app/",
+]
+
+CORS_ALLOW_ALL_ORIGINS = False  # ← turn off wildcard
+CORS_ALLOW_CREDENTIALS = True   # if you use cookies/auth headers later
 
 ROOT_URLCONF = 'educator.urls'
 
