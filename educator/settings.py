@@ -109,8 +109,19 @@ SPECTACULAR_SETTINGS = {
     'REDOC_UI_SETTINGS': {
         'hideHostname': False,
     },
-}
 
+    # ADD THIS BLOCK
+    'SERVE_PUBLIC': True,
+    'COMPONENT_SEPARATOR': '@',
+    'EXCLUDE_ANNOTATIONS': True,
+
+    # Exclude problematic fields from User model schema
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'COMPONENT_NO_NAME': True,
+    'EXCLUDE_FIELDS_FROM_SCHEMA': {
+        'accounts.User': ['groups', 'user_permissions'],  
+    },
+}
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
