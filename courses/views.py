@@ -309,19 +309,13 @@ class InstructorCourseCreateView(APIView):
         serializer = InstructorCourseSerializer(data=request.data)
         if serializer.is_valid():
             course = serializer.save(instructor=request.user)
-
-            # Notify instructor (confirmation)
             notify_instructor(
                 request.user,
                 f"You successfully created the course: {course.title}"
             )
-
-            # Optional: Notify admins
             notify_admins(f"New course created: {course.title} by {request.user.get_full_name()}")
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class InstructorCourseUpdateView(generics.UpdateAPIView):
